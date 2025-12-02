@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { FileText, Download, AlertCircle } from 'lucide-react';
+import { FileText, Download, AlertCircle, Type } from 'lucide-react';
 import { PDFDocument } from 'pdf-lib';
 import Footer from './components/Footer';
 
@@ -12,15 +12,8 @@ export default function PDFPageExtractor() {
   const [endPage, setEndPage] = useState<number | ''>('');
   const [error, setError] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [extractingText, setExtractingText] = useState(false);
   const [pdfjsLib, setPdfjsLib] = useState(null);
-
-  // Load PDF.js only on client side
-  // useEffect(() => {
-  //   import('pdfjs-dist').then((pdfjs) => {
-  //     pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
-  //     setPdfjsLib(pdfjs);
-  //   });
-  // }, []);
 
   // Load PDF.js only on client side
   useEffect(() => {
@@ -34,7 +27,6 @@ export default function PDFPageExtractor() {
     });
   }, []);
 
-  // Select a PDF file
   // Select a PDF file
   const handleFileChange = async (e) => {
     const selectedFile = e.target.files[0];
@@ -96,7 +88,7 @@ export default function PDFPageExtractor() {
       const pdfDoc = await PDFDocument.load(arrayBuffer);
       const newPdfDoc = await PDFDocument.create();
 
-      // Copy selected pages -- ah, classic for .. let i = loops...
+      // Copy selected pages
       for (let i = startPage - 1; i < endPage; i++) {
         const [copiedPage] = await newPdfDoc.copyPages(pdfDoc, [i]);
         newPdfDoc.addPage(copiedPage);
@@ -117,6 +109,57 @@ export default function PDFPageExtractor() {
       console.error(err);
     } finally {
       setProcessing(false);
+    }
+  };
+
+  // Extract text from selected pages
+  const extractText = async () => {
+    const start = startPage === '' ? 1 : startPage;
+    const end = endPage === '' ? numPages : endPage;
+    
+    if (!file || start < 1 || end > numPages || start > end) {
+      setError('Invalid page range');
+      return;
+    }
+
+    if (!pdfjsLib) {
+      setError('PDF library is not loaded');
+      return;
+    }
+
+    setExtractingText(true);
+    setError('');
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      
+      let allText = '';
+
+      // Extract text from each page in the range
+      for (let pageNum = start; pageNum <= end; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map(item => item.str).join(' ');
+        
+        allText += `--- Page ${pageNum} ---\n\n${pageText}\n\n`;
+      }
+
+      // Create and download text file
+      const blob = new Blob([allText], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${file.name.replace('.pdf', '')}_pages_${start}-${end}_text.txt`;
+      link.click();
+      
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError('Error extracting text');
+      console.error(err);
+    } finally {
+      setExtractingText(false);
     }
   };
 
@@ -221,20 +264,37 @@ export default function PDFPageExtractor() {
                   </div>
                 </div>
 
-                <button
-                  onClick={extractPages}
-                  disabled={processing}
-                  className="w-full bg-indigo-600 text-white py-3 rounded-md font-medium hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
-                >
-                  {processing ? (
-                    <>Processing...</>
-                  ) : (
-                    <>
-                      <Download className="w-5 h-5" />
-                      Extract Pages {startPage}-{endPage}
-                    </>
-                  )}
-                </button>
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    onClick={extractPages}
+                    disabled={processing}
+                    className="bg-indigo-600 text-white py-3 rounded-md font-medium hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
+                  >
+                    {processing ? (
+                      <>Processing...</>
+                    ) : (
+                      <>
+                        <Download className="w-5 h-5" />
+                        Extract PDF
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={extractText}
+                    disabled={extractingText}
+                    className="bg-emerald-600 text-white py-3 rounded-md font-medium hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
+                  >
+                    {extractingText ? (
+                      <>Extracting...</>
+                    ) : (
+                      <>
+                        <Type className="w-5 h-5" />
+                        Extract Text
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             )}
 
@@ -252,14 +312,11 @@ export default function PDFPageExtractor() {
               <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
                 <li>Upload a PDF file</li>
                 <li>Select the page range you want to extract</li>
-                <li>Click "Extract Pages" to download the new PDF</li>
+                <li>Click "Extract PDF" to download pages as a new PDF</li>
+                <li>Click "Extract Text" to download text content as a .txt file</li>
               </ol>
             </div>
-
-            
-
           </div>
-          
         </div>
         <Footer />
       </div>
