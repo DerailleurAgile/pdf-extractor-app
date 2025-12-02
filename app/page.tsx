@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, Download, AlertCircle } from 'lucide-react';
 import { PDFDocument } from 'pdf-lib';
+import Footer from './components/Footer';
 
 export default function PDFPageExtractor() {
   const [file, setFile] = useState(null);
@@ -254,8 +255,13 @@ export default function PDFPageExtractor() {
                 <li>Click "Extract Pages" to download the new PDF</li>
               </ol>
             </div>
+
+            
+
           </div>
+          
         </div>
+        <Footer />
       </div>
     </div>
   );
