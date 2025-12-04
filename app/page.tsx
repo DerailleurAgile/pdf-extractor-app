@@ -5,6 +5,7 @@ import { FileText, Download, AlertCircle, Type } from 'lucide-react';
 import { PDFDocument } from 'pdf-lib';
 import Footer from './components/Footer';
 import packageJson from '../package.json';
+import type * as pdfjsTypes from 'pdfjs-dist';
 
 export default function PDFPageExtractor() {
   const [file, setFile] = useState(null);
@@ -13,7 +14,7 @@ export default function PDFPageExtractor() {
   const [error, setError] = useState('');
   const [processing, setProcessing] = useState(false);
   const [extractingText, setExtractingText] = useState(false);
-  const [pdfjsLib, setPdfjsLib] = useState(null);
+  const [pdfjsLib, setPdfjsLib] = useState<typeof pdfjsTypes | null>(null);
 
   // Load PDF.js only on client side
   useEffect(() => {
