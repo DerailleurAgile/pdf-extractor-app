@@ -55,7 +55,7 @@ export default function PDFPageExtractor() {
   };
 
   // Select a PDF file
-  const handleFileChange = async (e) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files[0];
     
     if (!selectedFile) {
@@ -261,7 +261,7 @@ export default function PDFPageExtractor() {
                   <input
                     type="text"
                     value={pageRange}
-                    onChange={(e) => setPageRange(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPageRange(e.target.value)}
                     placeholder="e.g., 1, 3, 5-10, 15"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
