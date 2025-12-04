@@ -8,7 +8,7 @@ import packageJson from '../package.json';
 import type * as pdfjsTypes from 'pdfjs-dist';
 
 export default function PDFPageExtractor() {
-  const [file, setFile] = useState(null);
+  const [file, setFile] = useState<File | null>(null);
   const [numPages, setNumPages] = useState(0);
   const [pageRange, setPageRange] = useState('');
   const [error, setError] = useState('');
@@ -56,11 +56,11 @@ export default function PDFPageExtractor() {
 
   // Select a PDF file
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files[0];
+    const selectedFile = e.target.files?.[0];
     
     if (!selectedFile) {
       e.target.value = '';
-      return;
+      return;;
     }
 
     if (selectedFile.type !== 'application/pdf') {
@@ -120,7 +120,7 @@ export default function PDFPageExtractor() {
       }
 
       const pdfBytes = await newPdfDoc.save();
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       
       const link = document.createElement('a');
@@ -170,7 +170,10 @@ export default function PDFPageExtractor() {
       for (const pageNum of pages) {
         const page = await pdf.getPage(pageNum);
         const textContent = await page.getTextContent();
-        const pageText = textContent.items.map(item => item.str).join(' ');
+        // const pageText = textContent.items.map(item => item.str).join(' ');
+        const pageText = textContent.items
+          .map(item => ('str' in item ? item.str : ''))
+          .join(' ');
         
         allText += `--- Page ${pageNum} ---\n\n${pageText}\n\n`;
       }
