@@ -55,6 +55,17 @@ export default function PDFPageExtractor() {
     return Array.from(pages).sort((a, b) => a - b);
   };
 
+  const pagesToRangeDesc = (pages: number[]): string => {
+    const ranges: string[] = [];
+    let start = pages[0], end = pages[0];
+    for (let i = 1; i < pages.length; i++) {
+      if (pages[i] === end + 1) { end = pages[i]; }
+      else { ranges.push(start === end ? `${start}` : `${start}-${end}`); start = end = pages[i]; }
+    }
+    ranges.push(start === end ? `${start}` : `${start}-${end}`);
+    return ranges.join('|');
+  };
+
   // Select a PDF file
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -126,7 +137,7 @@ export default function PDFPageExtractor() {
       
       const link = document.createElement('a');
       link.href = url;
-      const rangeDesc = pages.length === numPages ? 'all' : pages.join('-');
+      const rangeDesc = pages.length === numPages ? 'all' : pagesToRangeDesc(pages);
       link.download = `${file.name.replace('.pdf', '')}_pages_${rangeDesc}.pdf`;
       link.click();
       
@@ -185,7 +196,7 @@ export default function PDFPageExtractor() {
       
       const link = document.createElement('a');
       link.href = url;
-      const rangeDesc = pages.length === numPages ? 'all' : pages.join('-');
+      const rangeDesc = pages.length === numPages ? 'all' : pagesToRangeDesc(pages);
       link.download = `${file.name.replace('.pdf', '')}_pages_${rangeDesc}_text.txt`;
       link.click();
       
